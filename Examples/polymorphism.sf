@@ -1,0 +1,3 @@
+let id =
+  [a] fun x : a = x
+in id @Num 1
