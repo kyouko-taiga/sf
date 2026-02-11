@@ -1,20 +1,3 @@
-/// An error that occurred during typing.
-public struct TypeError: Error, CustomStringConvertible {
-
-  /// A description of the error that occurred.
-  public let description: String
-
-  /// The source code or source position (if empty) identified as the cause of the error.
-  public let site: SourceSpan
-
-  /// Creates an instance reporting `problem` at `site`.
-  public init(_ problem: String, at site: SourceSpan) {
-    self.description = problem
-    self.site = site
-  }
-
-}
-
 /// A mapping from term variables to their types along with a set of type variables.
 public struct TypingEnvironment {
 
@@ -83,14 +66,14 @@ extension TypeSyntax {
       if e.types.contains(where: { (v) in v == n }) {
         return .variable(String(n))
       } else {
-        throw TypeError("undefined type '\(n)'", at: s)
+        throw Diagnostic("undefined type '\(n)'", at: s)
       }
 
     }
   }
 
   /// Returns a type error with the specified message.
-  private func error(_ problem: String) -> TypeError {
+  private func error(_ problem: String) -> Diagnostic {
     .init(problem, at: site)
   }
 
@@ -128,10 +111,10 @@ extension TermSyntax {
         if a.isEquivalent(c) {
           return b
         } else {
-          throw TypeError("expected '\(a)', found '\(c)'", at: y.site)
+          throw Diagnostic("expected '\(a)', found '\(c)'", at: y.site)
         }
       case let a:
-        throw TypeError("value of type '\(a)' is not a function", at: x.site)
+        throw Diagnostic("value of type '\(a)' is not a function", at: x.site)
       }
 
     case .typeAbstraction(let t, let x):
@@ -143,7 +126,7 @@ extension TermSyntax {
         let b = try t.denotation(in: e)
         return v.substituting(u, for: b)
       case let a:
-        throw TypeError("value of type '\(a)' is not a type application", at: x.site)
+        throw Diagnostic("value of type '\(a)' is not a type application", at: x.site)
       }
 
     case .binding(let p, let x, let y):
@@ -155,9 +138,9 @@ extension TermSyntax {
       let b = try y.type(in: e)
       let c = try z.type(in: e)
       if a != .boolean {
-        throw TypeError("expected 'Bool', found '\(a)'", at: x.site)
+        throw Diagnostic("expected 'Bool', found '\(a)'", at: x.site)
       } else if !b.isEquivalent(c) {
-        throw TypeError("expected '\(b)', found '\(c)'", at: z.site)
+        throw Diagnostic("expected '\(b)', found '\(c)'", at: z.site)
       } else {
         return b
       }
@@ -170,16 +153,16 @@ extension TermSyntax {
         if f == g {
           return f
         } else {
-          throw TypeError("expected '\(f)', found '\(g)' ", at: t.site)
+          throw Diagnostic("expected '\(f)', found '\(g)' ", at: t.site)
         }
       case let a:
-        throw TypeError("expected arrow type, found '\(a)' ", at: t.site)
+        throw Diagnostic("expected arrow type, found '\(a)' ", at: t.site)
       }
     }
   }
 
   /// Returns a type error with the specified message.
-  private func error(_ problem: String) -> TypeError {
+  private func error(_ problem: String) -> Diagnostic {
     .init(problem, at: site)
   }
 

@@ -1,20 +1,3 @@
-/// An error that occurred during parsing.
-public struct ParseError: Error, CustomStringConvertible {
-
-  /// A description of the error that occurred.
-  public let description: String
-
-  /// The source code or source position (if empty) identified as the cause of the error.
-  public let site: SourceSpan
-
-  /// Creates an instance reporting `problem` at `site`.
-  public init(_ problem: String, at site: SourceSpan) {
-    self.description = problem
-    self.site = site
-  }
-
-}
-
 /// The parsing of a source file.
 public struct Parser {
 
@@ -260,12 +243,12 @@ public struct Parser {
   }
 
   /// Returns a parse error reporting that `s` was expected at `site`.
-  private func expected(_ s: String, at site: SourceSpan) -> ParseError {
+  private func expected(_ s: String, at site: SourceSpan) -> Diagnostic {
     .init("expected \(s)", at: site)
   }
 
   /// Returns a parse error reporting that `s` was expected at the current position.
-  private func expected(_ s: String) -> ParseError {
+  private func expected(_ s: String) -> Diagnostic {
     expected(s, at: .init(region: position ..< position, source: tokens.source))
   }
 
