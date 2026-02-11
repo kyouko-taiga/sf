@@ -1,20 +1,3 @@
-/// An error that occurred during evaluation.
-public struct RuntimeError: Error, CustomStringConvertible {
-
-  /// A description of the error that occurred.
-  public let description: String
-
-  /// The source code or source position (if empty) identified as the cause of the error.
-  public let site: SourceSpan
-
-  /// Creates an instance reporting `problem` at `site`.
-  public init(_ problem: String, at site: SourceSpan) {
-    self.description = problem
-    self.site = site
-  }
-
-}
-
 /// A mapping from terms to their value.
 public struct RuntimeEnvironment: Sendable {
 
@@ -45,7 +28,17 @@ public struct RuntimeEnvironment: Sendable {
 extension TermSyntax {
 
   /// Returns the evaluation of this term in the environment `e`.
-  public func eval(in e: RuntimeEnvironment) throws -> Value {
+  ///
+  /// This method implements the runtime semantics of `sf` in the form of an interpreter, defined
+  /// as a function from well-typed terms to values.
+  ///
+  /// Note that no type information is taken into account to compute the results of this method.
+  /// However, well-typedness guarantees freedom from a number of errors, which explains why the
+  /// method cannot throw. Execution may trap at runtime nonetheless due to an illegal operation
+  /// not caught by the static semantics of `sf` (e.g., division by 0).
+  ///
+  /// - Precondition `self` is well-typed.
+  public func eval(in e: RuntimeEnvironment) -> Value {
     switch tag {
     case .unit:
       return .unit
@@ -57,37 +50,36 @@ extension TermSyntax {
       return .number(Double(site.text)!)
 
     case .variable:
-      // Note: type safety guarantees that `self` is in `e`.
       return e[String(site.text)]!
 
     case .abstraction:
       return .closure(self, e)
 
     case .application(let x, let y):
-      let lambda = try x.lambda(in: e)
-      let argument = try y.eval(in: e)
+      let lambda = x.lambda(in: e)
+      let argument = y.eval(in: e)
       switch lambda {
       case .user(let captures, let parameter, let body):
-        return try body.eval(in: captures.mapping(parameter, to: argument))
+        return body.eval(in: captures.mapping(parameter, to: argument))
       case .builtin(let f):
         return f(argument)
       }
 
     case .typeAbstraction(_, let t):
-      return try t.eval(in: e)
+      return t.eval(in: e)
 
     case .typeApplication(let t, _):
-      return try t.eval(in: e)
+      return t.eval(in: e)
 
     case .binding(let p, let x, let y):
-      let v = try x.eval(in: e)
-      return try y.eval(in: e.mapping(p.value, to: v))
+      let v = x.eval(in: e)
+      return y.eval(in: e.mapping(p.value, to: v))
 
     case .conditional(let x, let y, let z):
-      if case .boolean(true) = try x.eval(in: e) {
-        return try y.eval(in: e)
+      if case .boolean(true) = x.eval(in: e) {
+        return y.eval(in: e)
       } else {
-        return try z.eval(in: e)
+        return z.eval(in: e)
       }
 
     case .fix(let parameter, _, let function):
@@ -96,10 +88,17 @@ extension TermSyntax {
   }
 
   /// Returns the evaluation of `self`, which denotes a closure.
-  private func lambda(
-    in e: RuntimeEnvironment
-  ) throws -> Lambda {
-    switch try eval(in: e) {
+  ///
+  /// This method is called in the handling of term applications to evaluate the callable entity
+  /// expressed by a term. Three cases are possible:
+  ///
+  /// * `self` denotes an ordinary term abstraction, in which case the resulting value is a closure
+  ///   capturing the run-time environment `e`.
+  /// * `self` denotes a recursive term abstraction, in which case the resulting value "unrolls"
+  ///   one instance from the recursively definition of the abstraction.
+  /// * `self` denotes a built-in function which is simply wrapped into the resulting value.
+  private func lambda(in e: RuntimeEnvironment) -> Callable {
+    switch eval(in: e) {
     case .closure(let function, let captures):
       if case .abstraction(let parameter, _, let body) = function.tag {
         return .user(captures, parameter.value, body)
@@ -108,7 +107,7 @@ extension TermSyntax {
       }
 
     case .lazy(let w):
-      return try w.lambda(in: e)
+      return w.lambda(in: e)
 
     case .builtin(let f):
       return .builtin(f)
@@ -118,8 +117,8 @@ extension TermSyntax {
     }
   }
 
-  /// The value of a function.
-  private enum Lambda {
+  /// The value of a callable entity.
+  private enum Callable {
 
     /// A closure represented as an abstraction together with a set of captures.
     ///

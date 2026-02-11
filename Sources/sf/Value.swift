@@ -14,6 +14,11 @@ public enum Value: Sendable {
   case closure(TermSyntax, RuntimeEnvironment)
 
   /// A recursive function.
+  ///
+  /// The tag of the payload is a recursive term abstraction expressed with `TermSyntax.Tag.fix`.
+  /// During evaluation, this value expands to a closure mapping the name of recursive definition
+  /// to a copy of this value, in the style of Reynold's letrec formalization (see *Theories of
+  /// programming languages*. Cambridge University Press, 1998).
   case lazy(TermSyntax)
 
   /// A built-in function.

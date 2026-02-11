@@ -37,7 +37,7 @@ private func run<T: Collection<String>>(_ arguments: T) {
   if options.contains("-h") {
     let help = """
       USAGE: sf [-h] [-p] [-t] input
-      
+
       OPTIONS:
         -h Show help information.
         -p Show the result of parsing and exit.
@@ -68,7 +68,7 @@ private func run<T: Collection<String>>(_ arguments: T) {
     }
 
     // Evaluation.
-    print(try p.eval(in: .init()))
+    print(p.eval(in: .init()))
     exit(EXIT_SUCCESS)
   } catch let e {
     fail(String(describing: e))

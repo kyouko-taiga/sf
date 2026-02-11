@@ -18,3 +18,42 @@ swift build -c release
 ```
 
 The first command compiles `sf` from sources and the second displays usage instructions.
+
+## Features
+
+`sf` implements System F with extended with built-in Boolean and numeric values, along with a few simple syntactic sugars.
+Boolean values are either `true` or `false` and have type `Bool`.
+Numeric values are represented as double-precision floating point numbers and have type `Num`.
+They can be compared and they support simple arithmetic operations.
+The following snippet illustrates:
+
+```sf
+let factorial =
+  fix f : Num -> Num in
+    fun n : Num =
+      if n < 2 then 1 else n * (f (n - 1))
+in factorial(5)
+```
+
+See [Sources/sf/Builtins.swift](Builtins.swift) for an exhaustive list of built-in operations.
+
+## Grammar
+
+The complete grammar of `sf` is described below:
+
+```ebnf
+type ::=
+  | 'unit' | identifier
+  | type '->' type
+  | '[' identifier ']' type
+
+term ::=
+  | 'unit' | 'true' | 'false' | number | identifier
+  | 'fun' identifier ':' type '=' term
+  | term term
+  | '[' identifier ']' term
+  | term '@' type
+  | 'let' identifier '=' term 'in' term
+  | 'if' term 'then' term 'else' term
+  | 'fix' identifier ':' type 'in' term
+```

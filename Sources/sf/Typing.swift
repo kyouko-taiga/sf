@@ -99,6 +99,9 @@ extension TypeSyntax {
 extension TermSyntax {
 
   /// Returns the type of `self` in the environment `e`.
+  ///
+  /// This method implements the static semantics of `sf` in the form of a function assigning types
+  /// to terms given some typing environment.
   public func type(in e: TypingEnvironment) throws -> TypeTree {
     switch tag {
     case .unit:
