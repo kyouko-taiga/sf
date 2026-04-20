@@ -1,0 +1,39 @@
+/// The type of lists is defined as follows:
+///
+///     List [E] = [R] (E -> R -> R) -> R -> R
+///
+/// `E` denotes the type of the list's elements. An instance of a list is a function accepting
+/// another function performing some operation with the contents of the list and returning an
+/// instance of `R`.
+
+/// A function that never returns.
+let never =
+  [E] fix f : unit -> E in fun a : unit = f a
+in
+
+/// Returns an empty list of `E`s.
+let nil =
+  [E] [R] fun c : E -> R -> R = fun n : R = n
+in
+
+/// Returns a list containing `head` followed by the contents of `tail`.
+let cons =
+  [E] fun head : E =
+    fun tail : [R] (E -> R -> R) -> R -> R =
+      [R] fun c : E -> R -> R = fun n : R = c head (tail @R c n)
+in
+
+/// Returns `true` iff the list is empty.
+let empty =
+  [E] fun xs : [R] (E -> R -> R) -> R -> R =
+    xs @Bool (fun h : E = fun t : Bool = false) true
+in
+
+/// Returns the first element in `xs` or diverges if `xs` is empty.
+let first =
+  [E] fun xs : [R] (E -> R -> R) -> R -> R =
+    xs @(unit -> E) (fun h : E = fun t : (unit -> E) = fun u : unit = h) (never @E) unit
+in
+
+let xs = cons @Num 1 (nil @Num) in
+if empty @Num xs then 0 else first @Num xs
